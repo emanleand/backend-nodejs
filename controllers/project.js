@@ -1,6 +1,8 @@
 'use strict';
 let Project = require('../models/project');
 let fs = require('fs');
+let path = require('path');
+
 let controller = {
     home: function (req, res) {
         return res.status(200).send({
@@ -84,8 +86,9 @@ let controller = {
             let filePath = req.files.image.path;
             let fileSplit = filePath.split('/');
             let filename = fileSplit[1];
-            let extSplit = fileName.split('.');
+            let extSplit = filename.split('.');
             let fileExt = extSplit[1];
+
             if (fileExt == 'jpeg' || fileExt == 'png' || fileExt == 'jpg' || fileExt == 'gif') {
                 Project.findByIdAndUpdate(projectId, {image: filename}, {new: true}, (err, projectUpdate) => {
                     if (err) return res.status(409).send({ message: 'Imposible upload image' });
@@ -104,14 +107,20 @@ let controller = {
                 files: fileName
             });
         }
+    },
+    getImageFile: function(req, res) {
+        let file = req.params.image;
+        let pathFile = './uploads/' + file;
 
-
-/*         Project.findByIdAndRemove(projectId, (err, projectRemove) => {
-            if (err) return res.status(409).send({ message: 'Imposible delete' });
-            if (!projectRemove) return res.status(404).send({ message: 'project not found' });
-
-            return res.status(200).send({ project: projectRemove });
-        }) */
+        fs.exists(pathFile, (exists) => {
+            if (exists) {
+                return res.sendFile(path.resolve(pathFile));
+            } else {
+                return res.status(200).send({
+                    message: 'image not found'
+                });
+            }
+        });
     }
 }
 module.exports = controller
