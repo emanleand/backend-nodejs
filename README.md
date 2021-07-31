@@ -1,7 +1,17 @@
 # backend-nodejs
 Backend in Nodejs
+
+## Initialize Project
+### Instalation
+    - NodejS 12+
+    - Mongo DB
+    - Postman
+### Run
+    - npm i
+    - sudo systemctl start mongod
+    - npm run start
 ## Function
-<img src="./diagrams/icons/POST.svg" alt="drawing" height="17"/> **/api/save-project**
+<img src="./diagrams/icons/POST.jpg" alt="drawing" height="17"/> **/api/save-project**
 
 ```JAVA
 --header 'Content-Type: application/json' \
@@ -14,7 +24,7 @@ Backend in Nodejs
 }'
 ```
 
-<img src="./diagrams/icons/POST.svg" alt="drawing" height="17"/> **/upload-image/:id**
+<img src="./diagrams/icons/POST.jpg" alt="drawing" height="17"/> **/upload-image/:id**
 
 ```JAVA
 --header 'Content-Type: application/json' \
@@ -32,3 +42,5 @@ Backend in Nodejs
     "lang": "project lang"
 }'
 ```
+
+## Collection
