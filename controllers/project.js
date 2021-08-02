@@ -1,134 +1,106 @@
 'use strict';
 let Project = require('../models/project');
-let fs = require('fs');
 let path = require('path');
-const {
-  success,
-  forbidden,
-  notFound,
-  conflict,
-  badRequest
-} = require('../lib/util/response');
+const { success } = require('../lib/util/response');
 
-const { validateExtensions } = require('../lib/util/extensions');
-let controller = {
+const { getFilename } = require('../lib/util/extensions');
+const {
+  getAllProyectsService,
+  getProjectByIdService,
+  deleteProjectService,
+  saveProjectService,
+  updateProjectService,
+  getImageProjectService,
+  uploadImageProjectService,
+  deleteImageProjectService
+} = require('../services/projectServices');
+
+const projectController = {
   home: function (req, res) {
-      return res.status(200).send({
-          message: 'I Home'
-      });
+    return res.status(200).send({
+      message: 'I Home'
+    });
   },
   test: function (req, res) {
-      return res.status(200).send({
-          message: 'I Test'
-      });
-  },
-  saveProject: function (req, res) {
-    const {
-      name,
-      description,
-      category,
-      year,
-      lang
-    } = req.body;
-
-    const project = new Project();
-    project.name = name;
-    project.description = description;
-    project.category = category;
-    project.year = year;
-    project.lang = lang;
-    project.image = null;
-
-    project.save((error, projectStored) => {
-      if (error) return res.status(conflict.code).send(conflict);
-      if (!projectStored) return res.status(badRequest.code).send(badRequest);
-
-      return res.status(success.code).send({ project: projectStored });
+    return res.status(200).send({
+      message: 'I Test'
     });
   },
-  getProject: function (req, res) {
-    const projectId = req.params.id;
-    if (projectId == null) {
-      return res.status(badRequest.code).send(badRequest);
-    }
+  saveProject: async function (req, res) {
+    try {
+      const newProject = await saveProjectService(req.body);
+      return res.status(success.code).send(newProject)
 
-    Project.findById(projectId, (error, project) => {
-      if (error) return res.status(conflict.code).send(conflict);
-      if (!project) return res.status(forbidden.code).send(forbidden);
-
-      return res.status(success.code).send({ project });
-    })
-  },
-  getProjects: function (req, res) {
-    Project.find({}).sort('-year').exec((err, projects) => {
-      if (err) return res.status(conflict.code).send(conflict);
-      if (!projects) return res.status(forbidden.code).send(forbidden);
-
-      return res.status(success.code).send({ projects });
-    });
-  },
-  updateProjects: function (req, res) {
-    const projectId = req.params.id;
-
-    const update = req.body;
-    Project.findByIdAndUpdate(projectId, update, { new: true }, (error, projectUpdate) => {
-      if (error) return res.status(conflict.code).send(conflict);
-      if (!projectUpdate) return res.status(forbidden.code).send(forbidden);
-
-      return res.status(success.code).send({ project: projectUpdate });
-    });
-  },
-  deleteProjects: function (req, res) {
-    const projectId = req.params.id;
-
-    Project.findByIdAndRemove(projectId, (error, projectRemove) => {
-      if (error) return res.status(conflict.code).send(conflict);
-      if (!projectRemove) return res.status(forbidden.code).send(forbidden);
-
-      return res.status(success.code).send({ project: projectRemove });
-    });
-  },
-  uploadImage: function (req, res) {
-    const projectId = req.params.id;
-    let fileName = 'Image not upload';
-
-    if (req.files) {
-      let filePath = req.files.image.path;
-      let fileSplit = filePath.split('/');
-      let filename = fileSplit[1];
-      let extSplit = filename.split('.');
-      let fileExt = extSplit[1];
-
-      if (validateExtensions(fileExt)) {
-        Project.findByIdAndUpdate(projectId, {image: filename}, {new: true}, (error, projectUpdate) => {
-          if (error) return res.status(conflict.code).send(conflict);
-          if (!projectUpdate) return res.status(forbidden.code).send(forbidden);
-
-          return res.status(success.code).send({ project: projectUpdate });
-        });
-      } else {
-        fs.unlink(filePath, (error) => {
-          return res.status(success.code).send({ message: 'ext invalid' });
-        });
-      }
-    } else {
-      return res.status(success.code).send({ 
-        files: fileName
-      });
+    } catch (error) {
+      return res.status(error.code).send(error)
     }
   },
-  getImageFile: function(req, res) {
-    const file = req.params.image;
-    const pathFile = './uploads/' + file;
+  getProject: async function (req, res) {
+    try {
+      const project = await getProjectByIdService(req.params.id);
+      return res.status(success.code).send(project);
 
-    fs.exists(pathFile, (exists) => {
-      if (exists) {
-        return res.sendFile(path.resolve(pathFile));
-      } else {
-        return res.status(forbidden.code).send(forbidden);
+    } catch (error) {
+      return res.status(error.code).send(error)
+    }
+  },
+  getProjects: async function (req, res) {
+    try {
+      const projects = await getAllProyectsService();
+      return res.status(success.code).send(projects);
+
+    } catch (error) {
+      return res.status(error.code).send(error)
+    }
+  },
+  updateProjects: async function (req, res) {
+    try {
+      const updatedProject = await updateProjectService(req.params.id, req.body);
+      return res.status(success.code).send(updatedProject);
+
+    } catch (error) {
+      return res.status(error.code).send(error)
+    }
+  },
+  deleteProjects: async function (req, res) {
+    try {
+      // TODO delete associated image
+      const projectRemove = await deleteProjectService(req.params.id);
+      return res.status(success.code).send(projectRemove);
+
+    } catch (error) {
+      return res.status(error.code).send(error);
+    }
+  },
+  uploadImage: async function (req, res) {
+    try {
+      const projectFound = await getProjectByIdService(req.params.id); 
+      const projectUpdate = await uploadImageProjectService(req.params.id, req.files);
+      try {
+        if (projectFound.image) {
+          const oldImage = projectFound.image;
+          deleteImageProjectService(oldImage);                        
+        }
+      } catch (error) {
+        //TODO
       }
-    });
+
+      return res.status(success.code).send(projectUpdate);
+    } catch (error) {
+
+      deleteImageProjectService(getFilename(req.files));
+      return res.status(error.code).send(error);
+    }
+  },
+  getImageFile: async function (req, res) {
+    try {
+      const projectImage = await getImageProjectService(req.params.image);
+      return res.sendFile(projectImage);
+
+    } catch (error) {
+      return res.status(error.code).send(error);
+    }
   }
 }
 
-module.exports = controller
+module.exports = projectController

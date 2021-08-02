@@ -12,7 +12,7 @@ mongoose.connect('mongodb://' + user + ':' + psw + '@localhost:27017/portafolio?
 .then(() => {
     console.log('connection success');
     app.listen(port, () => {
-        console.log('Server on');
+        console.log('Server on port :' + port);
     });
 })
 .catch((err)=>{
