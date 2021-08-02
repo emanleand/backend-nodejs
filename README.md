@@ -5,7 +5,7 @@ Backend in Nodejs
 ### Instalation
     - NodejS 12+
     - Mongo DB
-    - Install Postman
+    - Postman
 ### Run
     - npm i
     - sudo systemctl start mongod
