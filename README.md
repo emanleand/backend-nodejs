@@ -1,5 +1,5 @@
 # backend-nodejs
-Backend in Nodejs
+This crud manage a portfolio web and is developed with node.js and mongodb.
 
 ## Initialize Project
 ### Instalation
